@@ -2,7 +2,6 @@ I use [dwm-flexipatch](https://github.com/bakkeby/dwm-flexipatch), [st-flexipatc
 [flexipath-finalizer](https://github.com/bakkeby/flexipatch-finalizer) is used to remove non-selected patches.
 
 # DWM
-===
 ## Patches
 - BAR_LTSYMBOL_PATCH
 - BAR_STATUS_PATCH
@@ -67,7 +66,6 @@ I use [dwm-flexipatch](https://github.com/bakkeby/dwm-flexipatch), [st-flexipatc
   - Screen brightness: xbacklight
 
 # ST
-===
 ## Patches
 - ALPHA_PATCH 
 - ANYSIZE_PATCH 
@@ -96,7 +94,6 @@ I use [dwm-flexipatch](https://github.com/bakkeby/dwm-flexipatch), [st-flexipatc
 - Theme: base16-onedark-theme
 
 # DMENU
-===
 ## Patches
 - ALPHA_PATCH
 - CASEINSENSITIVE_PATCH 
