@@ -53,6 +53,9 @@ install: all
 	cp -f dwm ${DESTDIR}${PREFIX}/bin
 ifdef YAJLLIBS
 	cp -f dwm-msg ${DESTDIR}${PREFIX}/bin
+endif
+	chmod 755 ${DESTDIR}${PREFIX}/bin/dwm
+ifdef YAJLLIBS
 	chmod 755 ${DESTDIR}${PREFIX}/bin/dwm-msg
 endif
 	mkdir -p ${DESTDIR}${MANPREFIX}/man1

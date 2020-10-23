@@ -18,6 +18,8 @@ dragcfact(const Arg *arg)
 	if (XGrabPointer(dpy, root, False, MOUSEMASK, GrabModeAsync, GrabModeAsync,
 		None, cursor[CurIronCross]->cursor, CurrentTime) != GrabSuccess)
 		return;
+
+
 	XWarpPointer(dpy, None, c->win, 0, 0, 0, 0, c->w/2, c->h/2);
 
 	prev_x = prev_y = -999999;

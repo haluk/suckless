@@ -14,9 +14,9 @@ static const int showbar                 = 1;   /* 0 means no bar */
 static const int topbar                  = 1;   /* 0 means bottom bar */
 static const unsigned int systrayspacing = 2;   /* systray spacing */
 static const int showsystray             = 1;   /* 0 means no systray */
-static int tagindicatortype              = INDICATOR_NONE; // see patch/bar_indicators.h for options
-static int floatindicatortype            = INDICATOR_NONE; // see patch/bar_indicators.h for options
-static void (*bartabmonfns[])(Monitor *) = { NULL /* , customlayoutfn */ };
+/* Indicators: see patch/bar_indicators.h for options */
+static int tagindicatortype              = INDICATOR_NONE;
+static int floatindicatortype            = INDICATOR_NONE;
 static const char *fonts[]               = { "Roboto Mono:size=10:antialias=true:autohint=true" };
 static const char dmenufont[]            = "Roboto Mono:size=10:antialias=true:autohint=true";
 
@@ -89,19 +89,14 @@ static char *colors[][ColCount] = {
 
 
 static const char *const autostart[] = {
-	/* "st", NULL, */
 	"slstatus", NULL,
 	NULL /* terminate */
 };
 
 const char *spcmd1[] = {"st", "-n", "spterm", "-g", "120x34", NULL };
-/* const char *spcmd2[] = {"st", "-n", "spfm", "-g", "144x41", "-e", "ranger", NULL }; */
-const char *spcmd3[] = {"keepassxc", NULL };
 static Sp scratchpads[] = {
    /* name          cmd  */
    {"spterm",      spcmd1},
-   /* {"spranger",    spcmd2}, */
-   {"keepassxc",   spcmd3},
 };
 
 /* Tags
@@ -133,8 +128,6 @@ static Sp scratchpads[] = {
  */
 static char *tagicons[][NUMTAGS] = {
 	[DEFAULT_TAGS]        = { "1", "2", "3", "4", "5", "6", "7", "8", "9" },
-	/* [ALTERNATIVE_TAGS]    = { "A", "B", "C", "D", "E", "F", "G", "H", "I" }, */
-	/* [ALT_TAGS_DECORATION] = { "<1>", "<2>", "<3>", "<4>", "<5>", "<6>", "<7>", "<8>", "<9>" }, */
 };
 
 
@@ -167,11 +160,9 @@ static const Rule rules[] = {
 	RULE(.wintype = WTYPE "UTILITY", .isfloating = 1)
 	RULE(.wintype = WTYPE "TOOLBAR", .isfloating = 1)
 	RULE(.wintype = WTYPE "SPLASH", .isfloating = 1)
-	/* RULE(.class = "Gimp", .tags = 1 << 4) */
-	RULE(.class = "Firefox", .tags = 1 << 1)
+	RULE(.class = "Gimp", .tags = 1 << 4)
+	RULE(.class = "Firefox", .tags = 1 << 0)
 	RULE(.instance = "spterm", .tags = SPTAG(0), .isfloating = 1)
-	/* RULE(.instance = "spfm", .tags = SPTAG(1), .isfloating = 1) */
-	RULE(.instance = "keepassxc", .tags = SPTAG(2))
 };
 
 
@@ -227,7 +218,6 @@ static const Layout layouts[] = {
 	{ ">M>",      centeredfloatingmaster, {0} },
 	{ "|||",      col,              {0} },
 	{ "[D]",      deck,             {0} },
-	{ "(@)",      spiral,           {0} },
 	{ "[\\]",     dwindle,          {0} },
 	{ "HHH",      grid,             {0} },
 	{ "---",      horizgrid,        {0} },
@@ -243,7 +233,8 @@ static const Layout layouts[] = {
 	{ MODKEY,                       KEY,      comboview,      {.ui = 1 << TAG} }, \
 	{ MODKEY|ControlMask,           KEY,      toggleview,     {.ui = 1 << TAG} }, \
 	{ MODKEY|ShiftMask,             KEY,      combotag,       {.ui = 1 << TAG} }, \
-	{ MODKEY|ControlMask|ShiftMask, KEY,      toggletag,      {.ui = 1 << TAG} },
+	{ MODKEY|ControlMask|ShiftMask, KEY,      toggletag,      {.ui = 1 << TAG} }, \
+	{ MODKEY|Mod4Mask|ShiftMask,    KEY,      swaptags,       {.ui = 1 << TAG} },
 
 #define STACKKEYS(MOD,ACTION) \
 	{ MOD, XK_j,     ACTION##stack, {.i = INC(+1) } }, \
@@ -271,11 +262,11 @@ static const char *dmenucmd[] = {
 	NULL
 };
 static const char *termcmd[]  = { "st", NULL };
+
 // Volume
 static const char *upvol[] = { "amixer", "-q", "sset", "Master", "5%+", NULL };
 static const char *downvol[] = { "amixer", "-q", "sset", "Master", "5%-", NULL };
 static const char *mutevol[] = { "amixer", "-q", "sset", "Master", "toggle", NULL };
-
 
 static Key keys[] = {
 	/* modifier                     key            function                argument */
@@ -338,23 +329,39 @@ static Key keys[] = {
 	{ MODKEY|Mod5Mask,              XK_Tab,        rotatelayoutaxis,       {.i = -2 } },   /* flextile, 2 = master axis */
 	{ MODKEY|Mod5Mask|ShiftMask,    XK_Tab,        rotatelayoutaxis,       {.i = -3 } },   /* flextile, 3 = stack axis */
 	{ MODKEY|Mod5Mask|Mod1Mask,     XK_Tab,        rotatelayoutaxis,       {.i = -4 } },   /* flextile, 4 = secondary stack axis */
-	{ MODKEY|ControlMask,           XK_Return,     mirrorlayout,           {0} },         /* flextile, flip master and stack areas */
+	{ MODKEY|ControlMask,           XK_Return,     mirrorlayout,           {0} },          /* flextile, flip master and stack areas */
 	{ MODKEY,                       XK_space,      setlayout,              {0} },
 	{ MODKEY|ShiftMask,             XK_space,      togglefloating,         {0} },
 	{ MODKEY,                       XK_grave,      togglescratch,          {.ui = 0 } },
-	{ MODKEY|ControlMask,           XK_grave,      togglescratch,          {.ui = 1 } },
-	{ MODKEY|ShiftMask,             XK_grave,      togglescratch,          {.ui = 2 } },
+	{ MODKEY|ControlMask,           XK_grave,      setscratch,             {.ui = 0 } },
+	{ MODKEY|ShiftMask,             XK_grave,      removescratch,          {.ui = 0 } },
 	{ MODKEY,                       XK_y,          togglefullscreen,       {0} },
 	{ MODKEY|ShiftMask,             XK_f,          fullscreen,             {0} },
 	{ MODKEY|ShiftMask,             XK_s,          togglesticky,           {0} },
-	{ MODKEY,                       XK_0,          view,                   {.ui = ~0 } },
-	{ MODKEY|ShiftMask,             XK_0,          tag,                    {.ui = ~0 } },
+	{ MODKEY,                       XK_0,          view,                   {.ui = ~SPTAGMASK } },
+	{ MODKEY|ShiftMask,             XK_0,          tag,                    {.ui = ~SPTAGMASK } },
 	{ MODKEY,                       XK_comma,      focusmon,               {.i = -1 } },
 	{ MODKEY,                       XK_period,     focusmon,               {.i = +1 } },
 	{ MODKEY|ShiftMask,             XK_comma,      tagmon,                 {.i = -1 } },
 	{ MODKEY|ShiftMask,             XK_period,     tagmon,                 {.i = +1 } },
-	{ MODKEY|MODKEYALT|ShiftMask,    XK_comma,      tagallmon,              {.i = +1 } },
-	{ MODKEY|MODKEYALT|ShiftMask,    XK_period,     tagallmon,              {.i = -1 } },
+	{ MODKEY|ShiftMask,             XK_F1,         tagall,                 {.v = "F1"} },
+	{ MODKEY|ShiftMask,             XK_F2,         tagall,                 {.v = "F2"} },
+	{ MODKEY|ShiftMask,             XK_F3,         tagall,                 {.v = "F3"} },
+	{ MODKEY|ShiftMask,             XK_F4,         tagall,                 {.v = "F4"} },
+	{ MODKEY|ShiftMask,             XK_F5,         tagall,                 {.v = "F5"} },
+	{ MODKEY|ShiftMask,             XK_F6,         tagall,                 {.v = "F6"} },
+	{ MODKEY|ShiftMask,             XK_F7,         tagall,                 {.v = "F7"} },
+	{ MODKEY|ShiftMask,             XK_F8,         tagall,                 {.v = "F8"} },
+	{ MODKEY|ShiftMask,             XK_F9,         tagall,                 {.v = "F9"} },
+	{ MODKEY|ControlMask,           XK_F1,         tagall,                 {.v = "1"} },
+	{ MODKEY|ControlMask,           XK_F2,         tagall,                 {.v = "2"} },
+	{ MODKEY|ControlMask,           XK_F3,         tagall,                 {.v = "3"} },
+	{ MODKEY|ControlMask,           XK_F4,         tagall,                 {.v = "4"} },
+	{ MODKEY|ControlMask,           XK_F5,         tagall,                 {.v = "5"} },
+	{ MODKEY|ControlMask,           XK_F6,         tagall,                 {.v = "6"} },
+	{ MODKEY|ControlMask,           XK_F7,         tagall,                 {.v = "7"} },
+	{ MODKEY|ControlMask,           XK_F8,         tagall,                 {.v = "8"} },
+	{ MODKEY|ControlMask,           XK_F9,         tagall,                 {.v = "9"} },
 	{ MODKEY|MODKEYALT|ControlMask,  XK_comma,      tagswapmon,             {.i = +1 } },
 	{ MODKEY|MODKEYALT|ControlMask,  XK_period,     tagswapmon,             {.i = -1 } },
 	{ MODKEY|ControlMask,           XK_minus,      setborderpx,            {.i = -1 } },
@@ -372,7 +379,6 @@ static Key keys[] = {
 	// Monitor
 	{ 0,                            XF86XK_MonBrightnessUp,         spawn,  SHCMD("xbacklight -inc 5") },
 	{ 0,                            XF86XK_MonBrightnessDown,       spawn,  SHCMD("xbacklight -dec 5") },
-	
 	TAGKEYS(                        XK_1,                                  0)
 	TAGKEYS(                        XK_2,                                  1)
 	TAGKEYS(                        XK_3,                                  2)
@@ -382,7 +388,6 @@ static Key keys[] = {
 	TAGKEYS(                        XK_7,                                  6)
 	TAGKEYS(                        XK_8,                                  7)
 	TAGKEYS(                        XK_9,                                  8)
-	
 };
 
 
@@ -403,5 +408,3 @@ static Button buttons[] = {
 	{ ClkTagBar,            MODKEY,              Button1,        tag,            {0} },
 	{ ClkTagBar,            MODKEY,              Button3,        toggletag,      {0} },
 };
-
-

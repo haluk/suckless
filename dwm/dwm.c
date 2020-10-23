@@ -198,7 +198,6 @@ struct Client {
 	int basew, baseh, incw, inch, maxw, maxh, minw, minh;
 	int bw, oldbw;
 	unsigned int tags;
-	unsigned int switchtag;
 	int isfixed, isfloating, isurgent, neverfocus, oldstate, isfullscreen;
 	int iscentered;
 	int isterminal, noswallow;
@@ -270,7 +269,6 @@ typedef struct {
 	const char *title;
 	const char *wintype;
 	unsigned int tags;
-	int switchtag;
 	int iscentered;
 	int isfloating;
 	int isterminal;
@@ -284,9 +282,10 @@ typedef struct {
 #define FLOATING , .isfloating = 1
 #define CENTERED , .iscentered = 1
 #define PERMANENT
+#define FAKEFULLSCREEN
 #define NOSWALLOW , .noswallow = 1
 #define TERMINAL , .isterminal = 1
-#define SWITCHTAG , .switchtag = 1
+#define SWITCHTAG
 
 
 /* function declarations */
@@ -442,7 +441,6 @@ applyrules(Client *c)
 	const char *class, *instance;
 	Atom wintype;
 	unsigned int i;
-	unsigned int newtagset;
 	const Rule *r;
 	Monitor *m;
 	XClassHint ch = { NULL, NULL };
@@ -477,30 +475,6 @@ applyrules(Client *c)
 			if (m)
 				c->mon = m;
 
-			if (r->switchtag && (
-				c->noswallow > 0 ||
-				!termforwin(c) ||
-				!(c->isfloating && swallowfloating && c->noswallow < 0)))
-			{
-				selmon = c->mon;
-				if (r->switchtag == 2 || r->switchtag == 4)
-					newtagset = c->mon->tagset[c->mon->seltags] ^ c->tags;
-				else
-					newtagset = c->tags;
-
-				/* Switch to the client's tag, but only if that tag is not already shown */
-				if (newtagset && !(c->tags & c->mon->tagset[c->mon->seltags])) {
-					if (r->switchtag == 3 || r->switchtag == 4)
-						c->switchtag = c->mon->tagset[c->mon->seltags];
-					if (r->switchtag == 1 || r->switchtag == 3) {
-						pertagview(&((Arg) { .ui = newtagset }));
-						arrange(c->mon);
-					} else {
-						c->mon->tagset[c->mon->seltags] = newtagset;
-						arrange(c->mon);
-					}
-				}
-			}
 		}
 	}
 	if (ch.res_class)
@@ -1230,6 +1204,7 @@ focus(Client *c)
 	}
 	selmon->sel = c;
 	drawbars();
+
 }
 
 /* there are some broken focus acquiring clients needing extra handling */
@@ -1348,7 +1323,8 @@ grabbuttons(Client *c, int focused)
 			XGrabButton(dpy, AnyButton, AnyModifier, c->win, False,
 				BUTTONMASK, GrabModeSync, GrabModeSync, None, None);
 		for (i = 0; i < LENGTH(buttons); i++)
-			if (buttons[i].click == ClkClientWin)
+			if (buttons[i].click == ClkClientWin
+			)
 				for (j = 0; j < LENGTH(modifiers); j++)
 					XGrabButton(dpy, buttons[i].button,
 						buttons[i].mask | modifiers[j],
@@ -1398,16 +1374,18 @@ void
 keypress(XEvent *e)
 {
 	unsigned int i;
-	KeySym keysym;
+	int keysyms_return;
+	KeySym* keysym;
 	XKeyEvent *ev;
 
 	ev = &e->xkey;
-	keysym = XKeycodeToKeysym(dpy, (KeyCode)ev->keycode, 0);
+	keysym = XGetKeyboardMapping(dpy, (KeyCode)ev->keycode, 1, &keysyms_return);
 	for (i = 0; i < LENGTH(keys); i++)
-		if (keysym == keys[i].keysym
-		&& CLEANMASK(keys[i].mod) == CLEANMASK(ev->state)
-		&& keys[i].func)
+		if (*keysym == keys[i].keysym
+				&& CLEANMASK(keys[i].mod) == CLEANMASK(ev->state)
+				&& keys[i].func)
 			keys[i].func(&(keys[i].arg));
+	XFree(keysym);
 }
 
 void
@@ -1415,7 +1393,8 @@ killclient(const Arg *arg)
 {
 	if (!selmon->sel)
 		return;
-	if (!sendevent(selmon->sel->win, wmatom[WMDelete], NoEventMask, wmatom[WMDelete], CurrentTime, 0, 0, 0)) {
+	if (!sendevent(selmon->sel->win, wmatom[WMDelete], NoEventMask, wmatom[WMDelete], CurrentTime, 0, 0, 0))
+	{
 		XGrabServer(dpy);
 		XSetErrorHandler(xerrordummy);
 		XSetCloseDownMode(dpy, DestroyAll);
@@ -1444,13 +1423,18 @@ manage(Window w, XWindowAttributes *wa)
 	c->h = c->oldh = wa->height;
 	c->oldbw = wa->border_width;
 	c->cfact = 1.0;
-
 	updatetitle(c);
 	if (XGetTransientForHint(dpy, w, &trans) && (t = wintoclient(trans))) {
 		c->mon = t->mon;
 		c->tags = t->tags;
+		c->bw = c->mon->borderpx;
+		if (c->x == c->mon->wx && c->y == c->mon->wy)
+			c->iscentered = 1;
 	} else {
 		c->mon = selmon;
+		if (c->x == c->mon->wx && c->y == c->mon->wy)
+			c->iscentered = 1;
+		c->bw = c->mon->borderpx;
 		applyrules(c);
 		term = termforwin(c);
 		if (term)
@@ -1465,7 +1449,6 @@ manage(Window w, XWindowAttributes *wa)
 	/* only fix client y-offset, if the client center might cover the bar */
 	c->y = MAX(c->y, ((c->mon->bar->by == c->mon->my) && (c->x + (c->w / 2) >= c->mon->wx)
 		&& (c->x + (c->w / 2) < c->mon->wx + c->mon->ww)) ? bh : c->mon->my);
-	c->bw = c->mon->borderpx;
 
 	wc.border_width = c->bw;
 	XConfigureWindow(dpy, w, CWBorderWidth, &wc);
@@ -1507,10 +1490,12 @@ manage(Window w, XWindowAttributes *wa)
 	if (c->mon == selmon)
 		unfocus(selmon->sel, 0, c);
 	c->mon->sel = c;
-	XMapWindow(dpy, c->win);
-	if (!(term && swallow(term, c)))
+	if (!(term && swallow(term, c))) {
 		arrange(c->mon);
+		XMapWindow(dpy, c->win);
+	}
 	focus(NULL);
+
 }
 
 void
@@ -1606,8 +1591,10 @@ movemouse(const Arg *arg)
 			else if (abs((selmon->wy + selmon->wh) - (ny + HEIGHT(c))) < snap)
 				ny = selmon->wy + selmon->wh - HEIGHT(c);
 			if (!c->isfloating && selmon->lt[selmon->sellt]->arrange
-			&& (abs(nx - c->x) > snap || abs(ny - c->y) > snap))
+			&& (abs(nx - c->x) > snap || abs(ny - c->y) > snap)) {
+				c->sfx = -9999; // disable savefloats when using movemouse
 				togglefloating(NULL);
+			}
 			if (!selmon->lt[selmon->sellt]->arrange || c->isfloating) {
 				resize(c, nx, ny, c->w, c->h, 1);
 				/* save last known float coordinates */
@@ -1741,13 +1728,13 @@ resizeclient(Client *c, int x, int y, int w, int h)
 	c->oldh = c->h; c->h = wc.height = h;
 	wc.border_width = c->bw;
 	if (((nexttiled(c->mon->clients) == c && !nexttiled(c->next))
-	    || &monocle == c->mon->lt[c->mon->sellt]->arrange
-	    )
-	    && !c->isfullscreen
-	    && !c->isfloating
-	    && c->mon->lt[c->mon->sellt]->arrange) {
-		c->w = wc.width += c->bw * 2;
-		c->h = wc.height += c->bw * 2;
+		|| &monocle == c->mon->lt[c->mon->sellt]->arrange
+		)
+		&& !c->isfullscreen
+		&& !c->isfloating
+		&& c->mon->lt[c->mon->sellt]->arrange) {
+		wc.width += c->bw * 2;
+		wc.height += c->bw * 2;
 		wc.border_width = 0;
 	}
 	XConfigureWindow(dpy, c->win, CWX|CWY|CWWidth|CWHeight|CWBorderWidth, &wc);
@@ -1804,8 +1791,10 @@ resizemouse(const Arg *arg)
 			&& c->mon->wy + nh >= selmon->wy && c->mon->wy + nh <= selmon->wy + selmon->wh)
 			{
 				if (!c->isfloating && selmon->lt[selmon->sellt]->arrange
-				&& (abs(nw - c->w) > snap || abs(nh - c->h) > snap))
+				&& (abs(nw - c->w) > snap || abs(nh - c->h) > snap)) {
+					c->sfx = -9999; // disable savefloats when using resizemouse
 					togglefloating(NULL);
+				}
 			}
 			if (!selmon->lt[selmon->sellt]->arrange || c->isfloating) {
 				resizeclient(c, nx, ny, nw, nh);
@@ -1920,8 +1909,6 @@ sendmon(Client *c, Monitor *m)
 		restack(m);
 	} else
 		focus(NULL);
-	if (c->switchtag)
-		c->switchtag = 0;
 }
 
 void
@@ -2217,8 +2204,6 @@ tag(const Arg *arg)
 
 	if (selmon->sel && arg->ui & TAGMASK) {
 		selmon->sel->tags = arg->ui & TAGMASK;
-		if (selmon->sel->switchtag)
-			selmon->sel->switchtag = 0;
 		focus(NULL);
 		arrange(selmon);
 		if ((arg->ui & TAGMASK) != selmon->tagset[selmon->seltags])
@@ -2262,9 +2247,7 @@ togglefloating(const Arg *arg)
 		if (c->sfx != -9999) {
 			/* restore last known float dimensions */
 			resize(c, c->sfx, c->sfy, c->sfw, c->sfh, 0);
-			arrange(c->mon);
-			return;
-		}
+		} else
 		resize(c, c->x, c->y, c->w, c->h, 0);
 	} else {
 		/* save last known float dimensions */
@@ -2274,6 +2257,7 @@ togglefloating(const Arg *arg)
 		c->sfh = c->h;
 	}
 	arrange(c->mon);
+
 }
 
 void
@@ -2301,14 +2285,15 @@ toggleview(const Arg *arg)
 	if (newtagset) {
 		selmon->tagset[selmon->seltags] = newtagset;
 
-		if (newtagset == ~0) {
+		if (newtagset == ~SPTAGMASK)
+		{
 			selmon->pertag->prevtag = selmon->pertag->curtag;
 			selmon->pertag->curtag = 0;
 		}
 		/* test if the user did not select the same tag */
 		if (!(newtagset & 1 << (selmon->pertag->curtag - 1))) {
 			selmon->pertag->prevtag = selmon->pertag->curtag;
-			for (i=0; !(newtagset & 1 << i); i++) ;
+			for (i = 0; !(newtagset & 1 << i); i++) ;
 			selmon->pertag->curtag = i + 1;
 		}
 
@@ -2345,7 +2330,6 @@ void
 unmanage(Client *c, int destroyed)
 {
 	Monitor *m = c->mon;
-	unsigned int switchtag = c->switchtag;
 	XWindowChanges wc;
 
 	if (c->swallowing) {
@@ -2381,8 +2365,6 @@ unmanage(Client *c, int destroyed)
 	focus(NULL);
 	updateclientlist();
 	arrange(m);
-	if (switchtag && ((switchtag & TAGMASK) != selmon->tagset[selmon->seltags]))
-		view(&((Arg) { .ui = switchtag }));
 }
 
 void

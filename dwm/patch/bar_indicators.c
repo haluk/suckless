@@ -70,12 +70,32 @@ drawindicator(Monitor *m, Client *c, unsigned int occ, int x, int y, int w, int 
 				( x + w - 2 - ((NUMTAGS / TAGSROWS) * TAGSPX)
 					- (i % (NUMTAGS/TAGSROWS)) + ((i % (NUMTAGS / TAGSROWS)) * TAGSPX)
 				),
-				( 2 + ((i / (NUMTAGS/TAGSROWS)) * TAGSPX)
+				( y + 2 + ((i / (NUMTAGS/TAGSROWS)) * TAGSPX)
 					- ((i / (NUMTAGS/TAGSROWS)))
 				),
 				TAGSPX, TAGSPX, (c->tags >> i) & 1, 0
 			);
 		}
 		break;
+	case INDICATOR_PLUS_AND_LARGER_SQUARE:
+		boxs += 2;
+		boxw += 2;
+		/* falls through */
+	case INDICATOR_PLUS_AND_SQUARE:
+		drw_rect(drw, x + boxs, y + boxs, boxw % 2 ? boxw : boxw + 1, boxw % 2 ? boxw : boxw + 1, filled, invert);
+		/* falls through */
+	case INDICATOR_PLUS:
+		if (!(boxw % 2))
+			boxw += 1;
+		drw_rect(drw, x + boxs + boxw / 2, y + boxs, 1, boxw, filled, invert); // |
+		drw_rect(drw, x + boxs, y + boxs + boxw / 2, boxw + 1, 1, filled, invert); // ‒
+		break;
 	}
+}
+
+void
+drawstateindicator(Monitor *m, Client *c, unsigned int occ, int x, int y, int w, int h, unsigned int tag, int filled, int invert)
+{
+	if (c->isfloating)
+		drawindicator(m, c, occ, x, y, w, h, tag, filled, invert, floatindicatortype);
 }
