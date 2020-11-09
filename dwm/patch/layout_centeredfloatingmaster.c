@@ -44,11 +44,11 @@ centeredfloatingmaster(Monitor *m)
 	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
 		if (i < m->nmaster) {
 			/* nmaster clients are stacked horizontally, in the center of the screen */
-			resize(c, mx, my, (mw / mfacts) * c->cfact + (i < mrest ? 1 : 0) - (2*c->bw), mh - (2*c->bw), 0);
+			resize(c, mx, my, (mw / mfacts) + (i < mrest ? 1 : 0) - (2*c->bw), mh - (2*c->bw), 0);
 			mx += WIDTH(c) + iv*mivf;
 		} else {
 			/* stack clients are stacked horizontally */
-			resize(c, sx, sy, (sw / sfacts) * c->cfact + ((i - m->nmaster) < srest ? 1 : 0) - (2*c->bw), sh - (2*c->bw), 0);
+			resize(c, sx, sy, (sw / sfacts) + ((i - m->nmaster) < srest ? 1 : 0) - (2*c->bw), sh - (2*c->bw), 0);
 			sx += WIDTH(c) + iv;
 		}
 }

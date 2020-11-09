@@ -6,6 +6,7 @@ struct Pertag {
 	const Layout *ltidxs[NUMTAGS + 1][3]; /* matrix of tags and layouts indexes  */
 	float mfacts[NUMTAGS + 1]; /* mfacts per tag */
 	unsigned int sellts[NUMTAGS + 1]; /* selected layouts */
+	Client *prevclient[NUMTAGS + 1];
 	int enablegaps[NUMTAGS + 1];
 };
 
@@ -17,7 +18,7 @@ pertagview(const Arg *arg)
 	if (arg->ui & TAGMASK) {
 		selmon->pertag->prevtag = selmon->pertag->curtag;
 		selmon->tagset[selmon->seltags] = arg->ui & TAGMASK;
-		if (arg->ui == ~SPTAGMASK)
+		if (arg->ui == ~0)
 			selmon->pertag->curtag = 0;
 		else {
 			for (i = 0; !(arg->ui & 1 << i); i++) ;

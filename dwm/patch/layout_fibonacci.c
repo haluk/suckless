@@ -91,3 +91,8 @@ dwindle(Monitor *m)
 	fibonacci(m, 1);
 }
 
+static void
+spiral(Monitor *m)
+{
+	fibonacci(m, 0);
+}

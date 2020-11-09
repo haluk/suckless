@@ -33,7 +33,7 @@ deck(Monitor *m)
 
 	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
 		if (i < m->nmaster) {
-			resize(c, mx, my, mw - (2*c->bw), (mh / mfacts) * c->cfact + (i < mrest ? 1 : 0) - (2*c->bw), 0);
+			resize(c, mx, my, mw - (2*c->bw), (mh / mfacts) + (i < mrest ? 1 : 0) - (2*c->bw), 0);
 			my += HEIGHT(c) + ih;
 		} else {
 			resize(c, sx, sy, sw - (2*c->bw), sh - (2*c->bw), 0);

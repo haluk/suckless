@@ -46,20 +46,20 @@ centeredmaster(Monitor *m)
 	/* calculate facts */
 	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++) {
 		if (!m->nmaster || n < m->nmaster)
-			mfacts += c->cfact; // total factor of master area
+			mfacts += 1;
 		else if ((n - m->nmaster) % 2)
-			lfacts += c->cfact; // total factor of left hand stack area
+			lfacts += 1; // total factor of left hand stack area
 		else
-			rfacts += c->cfact; // total factor of right hand stack area
+			rfacts += 1; // total factor of right hand stack area
 	}
 
 	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++)
 		if (!m->nmaster || n < m->nmaster)
 			mtotal += mh / mfacts;
 		else if ((n - m->nmaster) % 2)
-			ltotal += lh * (c->cfact / lfacts);
+			ltotal += lh / lfacts;
 		else
-			rtotal += rh * (c->cfact / rfacts);
+			rtotal += rh / rfacts;
 
 	mrest = mh - mtotal;
 	lrest = lh - ltotal;
@@ -68,15 +68,15 @@ centeredmaster(Monitor *m)
 	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++) {
 		if (!m->nmaster || i < m->nmaster) {
 			/* nmaster clients are stacked vertically, in the center of the screen */
-			resize(c, mx, my, mw - (2*c->bw), (mh / mfacts) * c->cfact + (i < mrest ? 1 : 0) - (2*c->bw), 0);
+			resize(c, mx, my, mw - (2*c->bw), (mh / mfacts) + (i < mrest ? 1 : 0) - (2*c->bw), 0);
 			my += HEIGHT(c) + ih;
 		} else {
 			/* stack clients are stacked vertically */
 			if ((i - m->nmaster) % 2 ) {
-				resize(c, lx, ly, lw - (2*c->bw), (lh / lfacts) * c->cfact + ((i - 2*m->nmaster) < 2*lrest ? 1 : 0) - (2*c->bw), 0);
+				resize(c, lx, ly, lw - (2*c->bw), (lh / lfacts) + ((i - 2*m->nmaster) < 2*lrest ? 1 : 0) - (2*c->bw), 0);
 				ly += HEIGHT(c) + ih;
 			} else {
-				resize(c, rx, ry, rw - (2*c->bw), (rh / rfacts) * c->cfact + ((i - 2*m->nmaster) < 2*rrest ? 1 : 0) - (2*c->bw), 0);
+				resize(c, rx, ry, rw - (2*c->bw), (rh / rfacts) + ((i - 2*m->nmaster) < 2*rrest ? 1 : 0) - (2*c->bw), 0);
 				ry += HEIGHT(c) + ih;
 			}
 		}

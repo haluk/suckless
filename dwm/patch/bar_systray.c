@@ -31,9 +31,10 @@ draw_systray(Bar *bar, BarArg *a)
 		wa.override_redirect = True;
 		wa.event_mask = ButtonPressMask|ExposureMask;
 		wa.border_pixel = 0;
+		systray->h = MIN(a->h, drw->fonts->h);
 		wa.background_pixel = 0;
 		wa.colormap = cmap;
-		systray->win = XCreateWindow(dpy, root, bar->bx + a->x + lrpad / 2, bar->by + a->y, MAX(a->w + 40, 1), a->h, 0, depth,
+		systray->win = XCreateWindow(dpy, root, bar->bx + a->x + lrpad / 2, bar->by + a->y + (a->h - systray->h) / 2, MAX(a->w + 40, 1), systray->h, 0, depth,
 						InputOutput, visual,
 						CWOverrideRedirect|CWBorderPixel|CWBackPixel|CWColormap|CWEventMask, &wa); // CWBackPixmap
 
@@ -73,7 +74,7 @@ draw_systray(Bar *bar, BarArg *a)
 			i->mon = bar->mon;
 	}
 
-	XMoveResizeWindow(dpy, systray->win, bar->bx + a->x + lrpad / 2, (w ? bar->by + a->y : -bar->by - a->y), MAX(w, 1), a->h);
+	XMoveResizeWindow(dpy, systray->win, bar->bx + a->x + lrpad / 2, (w ? bar->by + a->y + (a->h - systray->h) / 2: -bar->by - a->y), MAX(w, 1), systray->h);
 	return w;
 }
 
@@ -115,26 +116,26 @@ updatesystrayicongeom(Client *i, int w, int h)
 	if (!systray)
 		return;
 
-	int bar_height = systray->bar->bh - 2 * systray->bar->borderpx;
+	int icon_height = systray->h;
 	if (i) {
-		i->h = bar_height;
+		i->h = icon_height;
 		if (w == h)
-			i->w = bar_height;
-		else if (h == bar_height)
+			i->w = icon_height;
+		else if (h == icon_height)
 			i->w = w;
 		else
-			i->w = (int) ((float)bar_height * ((float)w / (float)h));
+			i->w = (int) ((float)icon_height * ((float)w / (float)h));
 		applysizehints(i, &(i->x), &(i->y), &(i->w), &(i->h), False);
 		/* force icons into the systray dimensions if they don't want to */
-		if (i->h > bar_height) {
+		if (i->h > icon_height) {
 			if (i->w == i->h)
-				i->w = bar_height;
+				i->w = icon_height;
 			else
-				i->w = (int) ((float)bar_height * ((float)i->w / (float)i->h));
-			i->h = bar_height;
+				i->w = (int) ((float)icon_height * ((float)i->w / (float)i->h));
+			i->h = icon_height;
 		}
-		if (i->w > 2 * bar_height)
-			i->w = bar_height;
+		if (i->w > 2 * icon_height)
+			i->w = icon_height;
 	}
 }
 

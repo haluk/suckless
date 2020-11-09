@@ -33,27 +33,24 @@ horizgrid(Monitor *m) {
 	}
 
 	/* calculate facts */
-	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
-		if (i < ntop)
-			mfacts += c->cfact;
-		else
-			sfacts += c->cfact;
+	mfacts = ntop;
+	sfacts = n - ntop;
 
 	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
 		if (i < ntop)
-			mtotal += mh * (c->cfact / mfacts);
+			mtotal += mh / mfacts;
 		else
-			stotal += sw * (c->cfact / sfacts);
+			stotal += sw / sfacts;
 
 	mrest = mh - mtotal;
 	srest = sw - stotal;
 
 	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
 		if (i < ntop) {
-			resize(c, mx, my, mw * (c->cfact / mfacts) + (i < mrest ? 1 : 0) - (2*c->bw), mh - (2*c->bw), 0);
+			resize(c, mx, my, mw / mfacts + (i < mrest ? 1 : 0) - (2*c->bw), mh - (2*c->bw), 0);
 			mx += WIDTH(c) + iv;
 		} else {
-			resize(c, sx, sy, sw * (c->cfact / sfacts) + ((i - ntop) < srest ? 1 : 0) - (2*c->bw), sh - (2*c->bw), 0);
+			resize(c, sx, sy, sw / sfacts + ((i - ntop) < srest ? 1 : 0) - (2*c->bw), sh - (2*c->bw), 0);
 			sx += WIDTH(c) + iv;
 		}
 }

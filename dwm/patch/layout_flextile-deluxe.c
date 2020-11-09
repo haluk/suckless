@@ -48,11 +48,11 @@ getfactsforrange(Monitor *m, int an, int ai, int size, int *rest, float *fact)
 	facts = 0;
 	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
 		if (i >= ai && i < (ai + an))
-			facts += c->cfact;
+			facts += 1;
 
 	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
 		if (i >= ai && i < (ai + an))
-			total += size * (c->cfact / facts);
+			total += size / facts;
 
 	*rest = size - total;
 	*fact = facts;
@@ -327,7 +327,6 @@ arrange_left_to_right(Monitor *m, int x, int y, int h, int w, int ih, int iv, in
 	getfactsforrange(m, an, ai, w, &rest, &facts);
 	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++) {
 		if (i >= ai && i < (ai + an)) {
-			fact = c->cfact;
 			resize(c, x, y, w * (fact / facts) + ((i - ai) < rest ? 1 : 0) - (2*c->bw), h - (2*c->bw), 0);
 			x += WIDTH(c) + iv;
 		}
@@ -348,7 +347,6 @@ arrange_top_to_bottom(Monitor *m, int x, int y, int h, int w, int ih, int iv, in
 	getfactsforrange(m, an, ai, h, &rest, &facts);
 	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++) {
 		if (i >= ai && i < (ai + an)) {
-			fact = c->cfact;
 			resize(c, x, y, w - (2*c->bw), h * (fact / facts) + ((i - ai) < rest ? 1 : 0) - (2*c->bw), 0);
 			y += HEIGHT(c) + ih;
 		}

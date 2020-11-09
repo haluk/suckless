@@ -38,6 +38,7 @@ swallow(Client *p, Client *c)
 
 	updatetitle(p);
 	s = scanner ? c : p;
+	setfloatinghint(s);
 	XMoveResizeWindow(dpy, p->win, s->x, s->y, s->w, s->h);
 	arrange(p->mon);
 	configure(p);
@@ -62,6 +63,7 @@ unswallow(Client *c)
 	arrange(c->mon);
 	XMapWindow(dpy, c->win);
 	XMoveResizeWindow(dpy, c->win, c->x, c->y, c->w, c->h);
+	setfloatinghint(c);
 	setclientstate(c, NormalState);
 	focus(NULL);
 	arrange(c->mon);
