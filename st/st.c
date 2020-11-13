@@ -226,6 +226,7 @@ static CSIEscape csiescseq;
 static STREscape strescseq;
 static int iofd = 1;
 static int cmdfd;
+static int csdfd;
 static pid_t pid;
 
 static uchar utfbyte[UTF_SIZ + 1] = {0x80,    0, 0xC0, 0xE0, 0xF0};
@@ -724,12 +725,19 @@ sigchld(int a)
 	int stat;
 	pid_t p;
 
-	if ((p = waitpid(pid, &stat, WNOHANG)) < 0)
+	if ((p = waitpid(-1, &stat, WNOHANG)) < 0)
 		die("waiting for pid %hd failed: %s\n", pid, strerror(errno));
 
-	if (pid != p)
-		return;
+	if (pid != p) {
+		if (p == 0 && wait(&stat) < 0)
+			die("wait: %s\n", strerror(errno));
 
+		/* reinstall sigchld handler */
+		signal(SIGCHLD, sigchld);
+		return;
+	}
+
+	close(csdfd);
 
 	if (WIFEXITED(stat) && WEXITSTATUS(stat))
 		die("child exited with status %d\n", WEXITSTATUS(stat));
@@ -766,6 +774,7 @@ int
 ttynew(char *line, char *cmd, char *out, char **args)
 {
 	int m, s;
+	struct sigaction sa;
 
 	if (out) {
 		term.mode |= MODE_PRINT;
@@ -812,12 +821,16 @@ ttynew(char *line, char *cmd, char *out, char **args)
 		break;
 	default:
 #ifdef __OpenBSD__
-		if (pledge("stdio rpath tty proc", NULL) == -1)
+		if (pledge("stdio rpath tty proc ps exec", NULL) == -1)
 			die("pledge\n");
 #endif
 		close(s);
 		cmdfd = m;
-		signal(SIGCHLD, sigchld);
+		csdfd = s;
+		memset(&sa, 0, sizeof(sa));
+		sigemptyset(&sa.sa_mask);
+		sa.sa_handler = sigchld;
+		sigaction(SIGCHLD, &sa, NULL);
 		break;
 	}
 	return cmdfd;

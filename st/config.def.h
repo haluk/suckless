@@ -114,6 +114,7 @@ unsigned int tabspaces = 8;
 /* bg opacity */
 float alpha = 0.9;
 
+/* Terminal colors (16 first used in escape sequence) */
 static const char *colorname[] = {
   "#282c34", /* base00 */
   "#e06c75", /* base08 */
@@ -133,48 +134,14 @@ static const char *colorname[] = {
   "#c8ccd4", /* base07 */
 };
 
-unsigned int defaultfg = 7;
-unsigned int defaultbg = 0;
-unsigned int defaultcs = 13;
-unsigned int defaultrcs = 0;
-
-/* Terminal colors (16 first used in escape sequence) */
-/* static const char *colorname[] = {	 */
-/* 	"#1c1f24", // black */
-/*     "#ff6c6b", // dark red */
-/*     "#98be65", // dark green */
-/*     "#DA8548", // dark orange */
-/*     "#51afef", // dark blue */
-/*     "#c678dd", // dark magenta */
-/*     "#5699AF", // dark cyan  */
-/* 	"#202328", // grey    */
-/*     "#5B6268", // dark grey */
-	 
-/*    "#da8548", // red */
-/*    "#4db5bd", // green */
-/*    "#ECBE7B", // orange */
-/*    "#2257A0", // blue */
-/*    "#a9a1e1", // magenta */
-/*    "#46D9FF", // cyan */
-/*    "#DFDFDF", // white */
-/*    "#000F1F", // dark dark navy blue */
-
-/*    "#210000", // dark dark red */
-/*    "#171600", // dark dark yellow */
-   
-/*    "#282C34",  // , Background */
-/*    "#bbc2cf" // 7 , Foreground */
-
-/* }; */
-
-
 /*
  * Default colors (colorname index)
  * foreground, background, cursor, reverse cursor
  */
-/* unsigned int defaultfg = 257; */
-/* unsigned int defaultbg = 256; */
-/* unsigned int defaultcs = 8; */
+unsigned int defaultfg = 7;
+unsigned int defaultbg = 0;
+unsigned int defaultcs = 13;
+unsigned int defaultrcs = 0;
 
 /*
  * Default shape of cursor
@@ -258,9 +225,10 @@ static Shortcut shortcuts[] = {
 	{ ShiftMask,            XK_Insert,      clippaste,       {.i =  0} },
 	{ TERMMOD,              XK_Num_Lock,    numlock,         {.i =  0} },
 	{ MODKEY,               XK_l,           copyurl,         {.i =  0} },
+	{ MODKEY,               XK_o,           opencopied,      {.v = "xdg-open"} },
 	{ TERMMOD,              XK_Return,      newterm,         {.i =  0} },
+	{ TERMMOD,              XK_U,           externalpipe,    { .v = openurlcmd } },
 	{ TERMMOD,              XK_Escape,      keyboard_select, { 0 } },
-	{ TERMMOD,              XK_I,           iso14755,        {.i =  0} },
 	{ TERMMOD,              XK_X,           invert,          { 0 } },
 };
 
@@ -301,7 +269,7 @@ static uint ignoremod = Mod2Mask|XK_SWITCH_MOD;
  * If no match is found, regular selection is used.
  */
 static uint selmasks[] = {
-	[SEL_RECTANGULAR] = Mod4Mask,
+	[SEL_RECTANGULAR] = Mod1Mask,
 };
 
 /*
@@ -313,3 +281,8 @@ static char ascii_printable[] =
 	"@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
 	"`abcdefghijklmnopqrstuvwxyz{|}~";
 
+/*
+ * plumb_cmd is run on mouse button 3 click, with argument set to
+ * current selection and with cwd set to the cwd of the active shell
+ */
+static char *plumb_cmd = "plumb";
