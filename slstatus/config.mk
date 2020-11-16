@@ -4,7 +4,7 @@ VERSION = 0
 # customize below to fit your system
 
 # paths
-PREFIX = $(HOME)/.build/slstatus
+PREFIX = $(HOME)/.local/build/slstatus
 MANPREFIX = $(PREFIX)/share/man
 
 X11INC = /usr/include/X11
