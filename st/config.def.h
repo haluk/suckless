@@ -116,32 +116,69 @@ float alpha = 0.9;
 
 /* Terminal colors (16 first used in escape sequence) */
 static const char *colorname[] = {
-  "#282c34", /* base00 */
-  "#e06c75", /* base08 */
-  "#98c379", /* base0B */
-  "#e5c07b", /* base0A */
-  "#61afef", /* base0D */
-  "#c678dd", /* base0E */
-  "#56b6c2", /* base0C */
-  "#abb2bf", /* base05 */
-  "#545862", /* base03 */
-  "#d19a66", /* base09 */
-  "#353b45", /* base01 */
-  "#3e4451", /* base02 */
-  "#565c64", /* base04 */
-  "#b6bdca", /* base06 */
-  "#be5046", /* base0F */
-  "#c8ccd4", /* base07 */
+    /* 8 normal colors */
+    [0] = "#232323",
+    [1] = "#d2813d",
+    [2] = "#8c9e3d",
+    [3] = "#b1942b",
+    [4] = "#6e9cb0",
+    [5] = "#b58d88",
+    [6] = "#6da280",
+    [7] = "#949d9f",
+
+    /* 8 bright colors */
+    [8] = "#312e30",
+    [9] = "#d0913d",
+    [10] = "#96a42d",
+    [11] = "#a8a030",
+    [12] = "#8e9cc0",
+    [13] = "#d58888",
+    [14] = "#7aa880",
+    [15] = "#aeadaf",
+
+    /* more colors can be added after 255 to use with DefaultXX */
+
+    /*
+     * PRO TIP: this is good when trying to dynamically change from a
+     * dark to a light theme or vice versa using ANSI escape sequences.
+     *
+     * Scenario:
+     *
+     * If on a dark theme we set defaultbg = 0 (with 15 being the
+     * defaultfg), then changing the value of '0' to what would be
+     * appropriate for a light theme (e.g. #ffffff) would turn the
+     * background white, when what we really wanted was to alter the
+     * foreground.
+     * That is because the assumption for the design of the Tempus
+     * themes is that colour codes represent colours.  So if a light
+     * theme needs a black foregound, it must use color0.  Whereas
+     * others default to defining the value of color0 as equivalent to
+     * background regardless of the colour value (and color15 as the
+     * foreground in the same way).  I think this is semantically
+     * incorrect and might cause problems.
+     *
+     * For working examples, see my dotfiles, specifically the
+     * 'own_script_update_running_terminals' under the "bin" directory:
+     * https://gitlab.com/protesilaos/dotfiles.  Note that this script
+     * is invoked from the 'own_script_update_environment_theme', which
+     * is typically interfaced via the 'tempusmenu'.
+     */
+    [256] = "#232323",
+    [257] = "#aeadaf",
+    [258] = "#aeadaf",
+    [259] = "#232323",
 };
 
-/*
- * Default colors (colorname index)
+/* Default colors (colorname index)
  * foreground, background, cursor, reverse cursor
  */
-unsigned int defaultfg = 7;
-unsigned int defaultbg = 0;
-unsigned int defaultcs = 13;
-unsigned int defaultrcs = 0;
+unsigned int defaultbg = 256;
+unsigned int defaultfg = 257;
+unsigned int defaultcs = 258;
+static unsigned int defaultrcs = 259;
+static unsigned int mousebg = 258;
+static unsigned int mousefg = 259;
+
 
 /*
  * Default shape of cursor
@@ -163,8 +200,8 @@ static unsigned int rows = 24;
  * Default colour and shape of the mouse cursor
  */
 static unsigned int mouseshape = XC_xterm;
-static unsigned int mousefg = 7;
-static unsigned int mousebg = 0;
+/* static unsigned int mousefg = 7; */
+/* static unsigned int mousebg = 0; */
 
 /*
  * Color used to display font attributes when fontconfig selected a font which
