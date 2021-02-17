@@ -63,7 +63,8 @@ static const char unknown_str[] = "n/a";
  */
 static const struct arg args[] = {
 	/* function format          argument */
-	{ run_command, " %s", "/bin/sh -c \"if [ $(amixer get Master | tail -n1 | cut -f4 -d '[' | sed 's/.$//') = \"off\" ]; then echo \"Muted\"; else echo $(amixer get Master | tail -n1 | grep -Po '\\[\\K[^%]*' | head -n1)%; fi\"" },
+	/* { run_command, " %s", "/bin/sh -c \"if [ $(amixer get Master | tail -n1 | cut -f3 -d '[' | sed 's/.$//') = \"off\" ]; then echo \"Muted\"; else echo $(amixer get Master | tail -n1 | grep -Po '\\[\\K[^%]*' | head -n1)%; fi\"" }, */
+	{ run_command, " %s", "/bin/sh -c \"if [ $(amixer get Master | tail -n1 | python -c \"import sys; print(sys.stdin.read().strip().split(' ')[-1][1:-1])\") = \"off\" ]; then echo \"Muted\"; else echo $(amixer get Master | tail -n1 | grep -Po '\\[\\K[^%]*' | head -n1)%; fi\"" },
 	{ battery_perc, "  %s%%", "BAT0" },
 	{ cpu_perc, "  %s%%", NULL },
 	{ ram_perc, "  %s%%", NULL },
