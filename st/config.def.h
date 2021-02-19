@@ -1,11 +1,14 @@
 /* See LICENSE file for copyright and license details. */
-#include "tempus_future.h"
+
 /*
  * appearance
  *
  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
  */
+#include "tempus_future.h"
+
 static char *font = "Roboto Mono:pixelsize=14:antialias=true:autohint=true";
+
 /* Spare fonts */
 static char *font2[] = {
 /*	"Inconsolata for Powerline:pixelsize=12:antialias=true:autohint=true", */
@@ -112,7 +115,7 @@ char *termname = "st-256color";
 unsigned int tabspaces = 8;
 
 /* bg opacity */
-float alpha = 1;
+float alpha = 0.8;
 
 /*
  * Default shape of cursor
@@ -134,8 +137,6 @@ static unsigned int rows = 24;
  * Default colour and shape of the mouse cursor
  */
 static unsigned int mouseshape = XC_xterm;
-/* static unsigned int mousefg = 7; */
-/* static unsigned int mousebg = 0; */
 
 /*
  * Color used to display font attributes when fontconfig selected a font which
@@ -196,9 +197,10 @@ static Shortcut shortcuts[] = {
 	{ ShiftMask,            XK_Insert,      clippaste,       {.i =  0} },
 	{ TERMMOD,              XK_Num_Lock,    numlock,         {.i =  0} },
 	{ MODKEY,               XK_l,           copyurl,         {.i =  0} },
+	{ MODKEY,               XK_o,           opencopied,      {.v = "xdg-open"} },
 	{ TERMMOD,              XK_Return,      newterm,         {.i =  0} },
+	{ TERMMOD,              XK_U,           externalpipe,    { .v = openurlcmd } },
 	{ TERMMOD,              XK_Escape,      keyboard_select, { 0 } },
-	{ TERMMOD,              XK_I,           iso14755,        {.i =  0} },
 	{ TERMMOD,              XK_X,           invert,          { 0 } },
 };
 
@@ -239,7 +241,7 @@ static uint ignoremod = Mod2Mask|XK_SWITCH_MOD;
  * If no match is found, regular selection is used.
  */
 static uint selmasks[] = {
-	[SEL_RECTANGULAR] = Mod4Mask,
+	[SEL_RECTANGULAR] = Mod1Mask,
 };
 
 /*
@@ -250,3 +252,9 @@ static char ascii_printable[] =
 	" !\"#$%&'()*+,-./0123456789:;<=>?"
 	"@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
 	"`abcdefghijklmnopqrstuvwxyz{|}~";
+
+/*
+ * plumb_cmd is run on mouse button 3 click, with argument set to
+ * current selection and with cwd set to the cwd of the active shell
+ */
+static char *plumb_cmd = "plumb";

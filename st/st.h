@@ -37,6 +37,7 @@ enum glyph_attribute {
 	ATTR_BOLD_FAINT = ATTR_BOLD | ATTR_FAINT,
 };
 
+
 enum selection_mode {
 	SEL_IDLE = 0,
 	SEL_EMPTY = 1,

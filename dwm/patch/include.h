@@ -14,6 +14,8 @@
 #include "cool_autostart.h"
 #include "cyclelayouts.h"
 #include "decorationhints.h"
+#include "fakefullscreenclient.h"
+#include "focusdir.h"
 #include "fullscreen.h"
 #include "moveresize.h"
 #include "pertag.h"
