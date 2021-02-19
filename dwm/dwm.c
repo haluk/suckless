@@ -263,6 +263,7 @@ typedef struct {
 	const char *wintype;
 	unsigned int tags;
 	int isfloating;
+	int isfakefullscreen;
 	int isterminal;
 	int noswallow;
 	int monitor;
@@ -348,8 +349,12 @@ static void sigchld(int unused);
 static void spawn(const Arg *arg);
 static void tag(const Arg *arg);
 static void tagmon(const Arg *arg);
+static void tagallmon(const Arg *arg);
+static void tagswapmon(const Arg *arg);
 static void togglebar(const Arg *arg);
+static void togglefakefullscreen(const Arg *arg);
 static void togglefloating(const Arg *arg);
+static void togglefullscreen(const Arg *arg);
 static void toggletag(const Arg *arg);
 static void toggleview(const Arg *arg);
 static void unfocus(Client *c, int setfocus, Client *nextfocus);
@@ -459,6 +464,7 @@ applyrules(Client *c)
 			c->noswallow = r->noswallow;
 			c->isfloating = r->isfloating;
 			c->tags |= r->tags;
+			c->fakefullscreen = r->isfakefullscreen;
 			for (m = mons; m && m->num != r->monitor; m = m->next);
 			if (m)
 				c->mon = m;
@@ -1147,7 +1153,7 @@ drawbarwin(Bar *bar)
 void
 enternotify(XEvent *e)
 {
-	Client *c;
+	Client *c, *sel;
 	Monitor *m;
 	XCrossingEvent *ev = &e->xcrossing;
 
@@ -1156,8 +1162,9 @@ enternotify(XEvent *e)
 	c = wintoclient(ev->window);
 	m = c ? c->mon : wintomon(ev->window);
 	if (m != selmon) {
-		unfocus(selmon->sel, 1, c);
+		sel = selmon->sel;
 		selmon = m;
+		unfocus(sel, 1, c);
 	} else if (!c || c == selmon->sel)
 		return;
 	focus(c);
@@ -1216,13 +1223,15 @@ void
 focusmon(const Arg *arg)
 {
 	Monitor *m;
+	Client *sel;
 
 	if (!mons->next)
 		return;
 	if ((m = dirtomon(arg->i)) == selmon)
 		return;
-	unfocus(selmon->sel, 0, NULL);
+	sel = selmon->sel;
 	selmon = m;
+	unfocus(sel, 0, NULL);
 	focus(NULL);
 }
 
@@ -1232,8 +1241,6 @@ focusstack(const Arg *arg)
 	Client *c = NULL, *i;
 
 	if (!selmon->sel)
-		return;
-	if (selmon->sel->isfullscreen)
 		return;
 	if (arg->i > 0) {
 		for (c = selmon->sel->next; c && !ISVISIBLE(c); c = c->next);
@@ -1550,13 +1557,15 @@ motionnotify(XEvent *e)
 {
 	static Monitor *mon = NULL;
 	Monitor *m;
+	Client *sel;
 	XMotionEvent *ev = &e->xmotion;
 
 	if (ev->window != root)
 		return;
 	if ((m = recttomon(ev->x_root, ev->y_root, 1, 1)) != mon && mon) {
-		unfocus(selmon->sel, 1, NULL);
+		sel = selmon->sel;
 		selmon = m;
+		unfocus(sel, 1, NULL);
 		focus(NULL);
 	}
 	mon = m;
@@ -1765,8 +1774,8 @@ resizeclient(Client *c, int x, int y, int w, int h)
 		&& (c->fakefullscreen == 1 || !c->isfullscreen)
 		&& !c->isfloating
 		&& c->mon->lt[c->mon->sellt]->arrange) {
-		wc.width += c->bw * 2;
-		wc.height += c->bw * 2;
+		c->w = wc.width += c->bw * 2;
+		c-> h = wc.height += c->bw * 2;
 		wc.border_width = 0;
 	}
 	XConfigureWindow(dpy, c->win, CWX|CWY|CWWidth|CWHeight|CWBorderWidth, &wc);
@@ -1988,10 +1997,11 @@ setfocus(Client *c)
 	sendevent(c->win, wmatom[WMTakeFocus], NoEventMask, wmatom[WMTakeFocus], CurrentTime, 0, 0, 0);
 }
 
+
 void
 setfullscreen(Client *c, int fullscreen)
 {
-	int savestate = 0, restorestate = 0;
+	int savestate = 0, restorestate = 0, restorefakefullscreen = 0;
 
 	if ((c->fakefullscreen == 0 && fullscreen && !c->isfullscreen) // normal fullscreen
 			|| (c->fakefullscreen == 2 && fullscreen)) // fake fullscreen --> actual fullscreen
@@ -2006,11 +2016,10 @@ setfullscreen(Client *c, int fullscreen)
 	 * while keeping fake fullscreen enabled (as otherwise there will be a mismatch between the
 	 * client and the window manager's perception of the client's fullscreen state). */
 	if (c->fakefullscreen == 2 && !fullscreen && c->isfullscreen) {
-		c->fakefullscreen = 1;
-		c->isfullscreen = 1;
+		restorefakefullscreen = 1;
+ 		c->isfullscreen = 1;
 		fullscreen = 1;
-	} else if (c->fakefullscreen == 3) // client exiting actual fullscreen
-		c->fakefullscreen = 1;
+	}
 
 	if (fullscreen != c->isfullscreen) { // only send property change if necessary
 		if (fullscreen)
@@ -2031,24 +2040,34 @@ setfullscreen(Client *c, int fullscreen)
 	 * when they are not supposed to we add an additional bit-lock on the old state so that
 	 * settings can only be stored and restored in that precise order. */
 	if (savestate && !(c->oldstate & (1 << 1))) {
-		c->oldbw = c->bw;
+ 		c->oldbw = c->bw;
 		c->oldstate = c->isfloating | (1 << 1);
-		c->bw = 0;
-		c->isfloating = 1;
-		resizeclient(c, c->mon->mx, c->mon->my, c->mon->mw, c->mon->mh);
-		XRaiseWindow(dpy, c->win);
+ 		c->bw = 0;
+ 		c->isfloating = 1;
+ 		resizeclient(c, c->mon->mx, c->mon->my, c->mon->mw, c->mon->mh);
+ 		XRaiseWindow(dpy, c->win);
 	} else if (restorestate && (c->oldstate & (1 << 1))) {
-		c->bw = c->oldbw;
+ 		c->bw = c->oldbw;
 		c->isfloating = c->oldstate = c->oldstate & 1;
-		c->x = c->oldx;
-		c->y = c->oldy;
-		c->w = c->oldw;
-		c->h = c->oldh;
-		resizeclient(c, c->x, c->y, c->w, c->h);
-		restack(c->mon);
+		if (restorefakefullscreen || c->fakefullscreen == 3)
+			c->fakefullscreen = 1;
+		/* The client may have been moved to another monitor whilst in fullscreen which if tiled
+		 * we address by doing a full arrange of tiled clients. If the client is floating then the
+		 * height and width may be larger than the monitor's window area, so we cap that by
+		 * ensuring max / min values. */
+		if (c->isfloating) {
+			c->x = MAX(c->mon->wx, c->oldx);
+			c->y = MAX(c->mon->wy, c->oldy);
+			c->w = MIN(c->mon->ww - c->x - 2*c->bw, c->oldw);
+			c->h = MIN(c->mon->wh - c->y - 2*c->bw, c->oldh);
+			resizeclient(c, c->x, c->y, c->w, c->h);
+			restack(c->mon);
+		} else
+			arrange(c->mon);
 	} else
-		resizeclient(c, c->x, c->y, c->w, c->h);
+ 		resizeclient(c, c->x, c->y, c->w, c->h);
 }
+
 
 void
 setlayout(const Arg *arg)
@@ -2288,11 +2307,131 @@ tag(const Arg *arg)
 }
 
 void
+tagallmon(const Arg *arg)
+{
+	Monitor *m;
+	Client *c, *last, *slast, *next;
+
+	if (!mons->next)
+		return;
+
+	m = dirtomon(arg->i);
+	for (last = m->clients; last && last->next; last = last->next);
+	for (slast = m->stack; slast && slast->snext; slast = slast->snext);
+
+	for (c = selmon->clients; c; c = next) {
+		next = c->next;
+		if (!ISVISIBLE(c))
+			continue;
+		unfocus(c, 1, NULL);
+		detach(c);
+		detachstack(c);
+		c->mon = m;
+		c->tags = m->tagset[m->seltags]; /* assign tags of target monitor */
+		c->next = NULL;
+		c->snext = NULL;
+		if (last)
+			last = last->next = c;
+		else
+			m->clients = last = c;
+		if (slast)
+			slast = slast->snext = c;
+		else
+			m->stack = slast = c;
+		if (c->isfullscreen) {
+			if (c->fakefullscreen != 1) {
+				resizeclient(c, c->mon->mx, c->mon->my, c->mon->mw, c->mon->mh);
+				XRaiseWindow(dpy, c->win);
+			}
+		}
+	}
+
+	focus(NULL);
+	arrange(NULL);
+}
+
+void
+tagswapmon(const Arg *arg)
+{
+	Monitor *m;
+	Client *c, *sc = NULL, *mc = NULL, *next;
+
+	if (!mons->next)
+		return;
+
+	m = dirtomon(arg->i);
+
+	for (c = selmon->clients; c; c = next) {
+		next = c->next;
+		if (!ISVISIBLE(c))
+			continue;
+		unfocus(c, 1, NULL);
+		detach(c);
+		detachstack(c);
+		c->next = sc;
+		sc = c;
+	}
+
+	for (c = m->clients; c; c = next) {
+		next = c->next;
+		if (!ISVISIBLE(c))
+			continue;
+		unfocus(c, 1, NULL);
+		detach(c);
+		detachstack(c);
+		c->next = mc;
+		mc = c;
+	}
+
+	for (c = sc; c; c = next) {
+		next = c->next;
+		c->mon = m;
+		c->tags = m->tagset[m->seltags]; /* assign tags of target monitor */
+		attach(c);
+		attachstack(c);
+		if (c->isfullscreen) {
+			if (c->fakefullscreen != 1) {
+				resizeclient(c, c->mon->mx, c->mon->my, c->mon->mw, c->mon->mh);
+				XRaiseWindow(dpy, c->win);
+			}
+		}
+	}
+
+	for (c = mc; c; c = next) {
+		next = c->next;
+		c->mon = selmon;
+		c->tags = selmon->tagset[selmon->seltags]; /* assign tags of target monitor */
+		attach(c);
+		attachstack(c);
+		if (c->isfullscreen) {
+			if (c->fakefullscreen != 1) {
+				resizeclient(c, c->mon->mx, c->mon->my, c->mon->mw, c->mon->mh);
+				XRaiseWindow(dpy, c->win);
+			}
+		}
+	}
+
+	focus(NULL);
+	arrange(NULL);
+}
+
+
+void
 tagmon(const Arg *arg)
 {
-	if (!selmon->sel || !mons->next)
+	Client *c = selmon->sel;
+	if (!c || !mons->next)
 		return;
-	sendmon(selmon->sel, dirtomon(arg->i));
+	if (c->isfullscreen) {
+		c->isfullscreen = 0;
+		sendmon(c, dirtomon(arg->i));
+		c->isfullscreen = 1;
+		if (c->fakefullscreen != 1) {
+			resizeclient(c, c->mon->mx, c->mon->my, c->mon->mw, c->mon->mh);
+			XRaiseWindow(dpy, c->win);
+		}
+	} else
+		sendmon(c, dirtomon(arg->i));
 }
 
 void
@@ -2305,6 +2444,26 @@ togglebar(const Arg *arg)
 		XMoveResizeWindow(dpy, bar->win, bar->bx, bar->by, bar->bw, bar->bh);
 	arrange(selmon);
 }
+
+void
+togglefakefullscreen(const Arg *arg)
+{
+	Client *c = selmon->sel;
+	if (!c)
+		return;
+
+	if (c->fakefullscreen != 1 && c->isfullscreen) { // exit fullscreen --> fake fullscreen
+		c->fakefullscreen = 2;
+		setfullscreen(c, 0);
+	} else if (c->fakefullscreen == 1) {
+		setfullscreen(c, 0);
+		c->fakefullscreen = 0;
+	} else {
+		c->fakefullscreen = 1;
+		setfullscreen(c, 1);
+	}
+}
+
 
 void
 togglefloating(const Arg *arg)
@@ -2337,6 +2496,20 @@ togglefloating(const Arg *arg)
 	arrange(c->mon);
 
 	setfloatinghint(c);
+}
+
+void
+togglefullscreen(const Arg *arg)
+{
+	Client *c = selmon->sel;
+	if (!c)
+		return;
+
+	if (c->fakefullscreen == 1) { // fake fullscreen --> fullscreen
+		c->fakefullscreen = 2;
+		setfullscreen(c, 1);
+	} else
+		setfullscreen(c, !c->isfullscreen);
 }
 
 void
@@ -2398,6 +2571,10 @@ unfocus(Client *c, int setfocus, Client *nextfocus)
 {
 	if (!c)
 		return;
+	if (c->isfullscreen && ISVISIBLE(c) && c->mon == selmon && nextfocus && !nextfocus->isfloating)
+		if (c->fakefullscreen != 1)
+			setfullscreen(c, 0);
+
 	selmon->pertag->prevclient[selmon->pertag->curtag] = c;
 	grabbuttons(c, 0);
 	if (c->isfloating)
