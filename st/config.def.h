@@ -5,7 +5,7 @@
  *
  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
  */
-#include "tempus_future.h"
+#include "hemisu_dark.h"
 
 static char *font = "Roboto Mono:pixelsize=14:antialias=true:autohint=true";
 
