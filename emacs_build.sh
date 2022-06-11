@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 git clone https://git.savannah.gnu.org/git/emacs.git
+cd emacs
 
 export CFLAGS+=" -g3 -O2 -flto -march=native"
 export CXXFLAGS+=" -g3 -O2 -flto -march=native"
