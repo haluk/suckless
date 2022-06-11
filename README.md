@@ -25,6 +25,7 @@ go
 graphviz
 gsfonts
 gspell
+gtk-engine-murrine
 harfbuzz
 htop
 hunspell
@@ -34,8 +35,10 @@ inkscape
 isync
 jq
 libreoffice-fresh
+libsass
 lua
 luarocks
+lxappearance
 maim
 msmtp
 neovim
@@ -47,12 +50,14 @@ noto-fonts-cjk
 noto-fonts-emoji
 npm
 ntfs-3g
+openssh
 os-prober
 p7zip
 pandoc
 pango
 pass
 picom
+polkit
 pwgen
 pyenv
 python
@@ -61,6 +66,7 @@ remmina
 ripgrep
 rsync
 rust
+sassc
 sbcl
 texlive-most
 tmux
@@ -76,10 +82,11 @@ vivid
 vlc
 wget
 xclip
+xdg-user-dirs
 xsel
 zathura
 zathura-pdf-mupdf
-zsh-completions
+
 
 ### AUR
 impressive
