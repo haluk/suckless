@@ -84,6 +84,7 @@ wget
 xclip
 xdg-user-dirs
 xsel
+xorg-xbacklight
 zathura
 zathura-pdf-mupdf
 
