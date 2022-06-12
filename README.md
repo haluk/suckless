@@ -92,3 +92,4 @@ zathura-pdf-mupdf
 ### AUR
 impressive
 editorconfig-core-c
+brightnessctl
