@@ -12,8 +12,8 @@ static char *font = "Roboto Mono for Powerline:pixelsize=14:antialias=true:autoh
 #if FONT2_PATCH
 /* Spare fonts */
 static char *font2[] = {
+	"Roboto Mono for Powerline:pixelsize=14:antialias=true:autohint=true",
 	"Inconsolata for Powerline:pixelsize=12:antialias=true:autohint=true",
-	"Hack Nerd Font Mono:pixelsize=11:antialias=true:autohint=true",
 };
 #endif // FONT2_PATCH
 

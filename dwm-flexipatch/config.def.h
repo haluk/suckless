@@ -1213,8 +1213,8 @@ static Key keys[] = {
 	{ 0,                            XF86XK_AudioRaiseVolume,               spawn,  {.v = upvol } },
 	{ 0,                            XF86XK_AudioMute,                      spawn,  {.v = mutevol } },
 	// Monitor
-	{ 0,                            XF86XK_MonBrightnessUp,                spawn,  SHCMD("xbacklight -inc 5") },
-	{ 0,                            XF86XK_MonBrightnessDown,              spawn,  SHCMD("xbacklight -dec 5") },
+	{ 0,                            XF86XK_MonBrightnessUp,                spawn,  SHCMD("brightnessctl s +5%") },
+	{ 0,                            XF86XK_MonBrightnessDown,              spawn,  SHCMD("brightnessctl s 5%-") },
 	TAGKEYS(                        XK_1,                                  0)
 	TAGKEYS(                        XK_2,                                  1)
 	TAGKEYS(                        XK_3,                                  2)
