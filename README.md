@@ -40,8 +40,11 @@ lua
 luarocks
 lxappearance
 maim
+man
+man-pages
 msmtp
 neovim
+network-manager-applet
 networkmanager-strongswan
 nodejs
 notmuch
@@ -61,6 +64,7 @@ polkit
 pwgen
 pyenv
 python
+python-pygments
 reflector
 remmina
 ripgrep
@@ -93,3 +97,4 @@ zathura-pdf-mupdf
 impressive
 editorconfig-core-c
 brightnessctl
+libxft-bgra

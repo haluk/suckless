@@ -17,7 +17,7 @@
  * case-insensitive -i option with a case sensitive -s option.
  * http://tools.suckless.org/dmenu/patches/case-insensitive/
  */
-#define CASEINSENSITIVE_PATCH 0
+#define CASEINSENSITIVE_PATCH 1
 
 /* This patch centers dmenu in the middle of the screen.
  * https://tools.suckless.org/dmenu/patches/center/
@@ -82,12 +82,12 @@
  * The fuzzy highlight patch takes precedence over this patch.
  * https://tools.suckless.org/dmenu/patches/highlight/
  */
-#define HIGHLIGHT_PATCH 1
+#define HIGHLIGHT_PATCH 0
 
 /* This will automatically sort the search result so that high priority items are shown first.
  * https://tools.suckless.org/dmenu/patches/highpriority/
  */
-#define HIGHPRIORITY_PATCH 1
+#define HIGHPRIORITY_PATCH 0
 
 /* This patch causes dmenu to print out the current text each time a key is pressed.
  * https://tools.suckless.org/dmenu/patches/incremental/
@@ -172,7 +172,7 @@
  * substring matches.
  * https://tools.suckless.org/dmenu/patches/no-sort/
  */
-#define NO_SORT_PATCH 0
+#define NO_SORT_PATCH 1
 
 /* This is a patch to have dmenu read stdin in a non blocking way, making it wait for input both
  * from stdin and from X. This means that you can continue feeding dmenu while you type.
