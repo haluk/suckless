@@ -17,6 +17,7 @@ dunst
 fd
 feh
 firefox
+freerdp
 gimp
 git
 gnu-free-fonts
