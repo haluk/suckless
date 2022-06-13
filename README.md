@@ -22,6 +22,7 @@ git
 gnu-free-fonts
 gnuplot
 go
+gobject-introspection
 graphviz
 gsfonts
 gspell
