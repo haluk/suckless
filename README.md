@@ -89,6 +89,7 @@ vlc
 wget
 xclip
 xdg-user-dirs
+xdotool
 xsel
 xorg-xbacklight
 zathura
