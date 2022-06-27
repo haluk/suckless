@@ -33,6 +33,7 @@ htop
 hunspell
 hunspell-en_us
 imagemagick
+inetutils
 inkscape
 isync
 jq
